@@ -49,28 +49,21 @@ class TerseExecutableView(BinaryView):
         self.platform = platforms[machine]
         self.arch = self.platform.arch
 
-    def _create_segments(self, image_base: int, header_offset: int, code_offset: int, num_sections: int):
-        """
-        Create segments. One read-only segment for the headers and a RWX segment for everything else.
-        """
-        header_size = TERSE_IMAGE_HEADER_SIZE + num_sections * SECTION_HEADER_SIZE
-        self.add_auto_segment(image_base + header_offset, header_size, 0, header_size, SegmentFlag.SegmentReadable)
-        code_size = self.raw.length - header_size
-        self.add_auto_segment(
-            image_base + code_offset, code_size, code_offset - header_offset, code_size,
-            SegmentFlag.SegmentReadable | SegmentFlag.SegmentWritable | SegmentFlag.SegmentExecutable
-        )
-
-    def _create_sections(self, image_base: int, num_sections: int):
+    def _create_sections_and_segments(self, image_base: int, header_offset: int, num_sections: int):
         """
         Section headers are formatted the same as in a PE file.
         """
+        header_size = TERSE_IMAGE_HEADER_SIZE + num_sections * SECTION_HEADER_SIZE
+        self.add_auto_segment(image_base + header_offset, header_size, 0, header_size, SegmentFlag.SegmentReadable)
+
         for i in range(num_sections):
             base = TERSE_IMAGE_HEADER_SIZE + i*SECTION_HEADER_SIZE
             section = self.raw[base:base+SECTION_HEADER_SIZE]
             name = section[0x00:0x08].decode()
             virtual_size = struct.unpack('<I', section[0x8:0xc])[0]
             virtual_addr = struct.unpack('<I', section[0xc:0x10])[0]
+            raw_data_size = struct.unpack('<I', section[0x10:0x14])[0]
+            raw_data_offset = struct.unpack('<I', section[0x14:0x18])[0]
 
             characteristics = struct.unpack('<I', section[0x24:0x28])[0]
             flags = 0
@@ -86,6 +79,9 @@ class TerseExecutableView(BinaryView):
                 flags |= SegmentFlag.SegmentContainsData;
             if characteristics & 0x00000020:
                 flags |= SegmentFlag.SegmentContainsCode;
+
+
+            self.add_auto_segment(image_base + virtual_addr, virtual_size, raw_data_offset - header_offset, raw_data_size, flags)
 
             pFlags = flags & 0x7
             semantics = SectionSemantics.DefaultSectionSemantics
@@ -130,8 +126,7 @@ class TerseExecutableView(BinaryView):
         print(f'code offset: {code_offset:x}')
         print(f'code addr: {image_base + code_offset:x}')
 
-        self._create_segments(image_base, headers_offset, code_offset, num_sections)
-        self._create_sections(image_base, num_sections)
+        self._create_sections_and_segments(image_base, headers_offset, num_sections)
         self._apply_header_types(image_base, headers_offset, num_sections)
 
         self.entry_addr = image_base + entry_addr
