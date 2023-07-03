@@ -120,12 +120,6 @@ class TerseExecutableView(BinaryView):
 
         headers_offset = stripped_size - TERSE_IMAGE_HEADER_SIZE # Don't question it...
 
-        print(f'image base: {image_base:x}')
-        print(f'header offset: {headers_offset:x}')
-        print(f'header addr: {image_base + headers_offset:x}')
-        print(f'code offset: {code_offset:x}')
-        print(f'code addr: {image_base + code_offset:x}')
-
         self._create_sections_and_segments(image_base, headers_offset, num_sections)
         self._apply_header_types(image_base, headers_offset, num_sections)
 
