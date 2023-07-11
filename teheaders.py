@@ -7,25 +7,41 @@ def define_named_type(bv: BinaryView, name: str, ty: Type) -> NamedTypeReference
     return Type.named_type_from_type(type_name, ty)
 
 def define_te_header_type(bv: BinaryView) -> NamedTypeReferenceType:
+    subsystem_type = Type.enumeration(arch=bv.arch, width=1, sign=False, members=[
+        ("IMAGE_SUBSYSTEM_UNKNOWN", IMAGE_SUBSYSTEM_UNKNOWN),
+        ("IMAGE_SUBSYSTEM_NATIVE", IMAGE_SUBSYSTEM_NATIVE),
+        ("IMAGE_SUBSYSTEM_WINDOWS_GUI", IMAGE_SUBSYSTEM_WINDOWS_GUI),
+        ("IMAGE_SUBSYSTEM_WINDOWS_CUI", IMAGE_SUBSYSTEM_WINDOWS_CUI),
+        ("IMAGE_SUBSYSTEM_OS2_CUI", IMAGE_SUBSYSTEM_OS2_CUI),
+        ("IMAGE_SUBSYSTEM_POSIX_CUI", IMAGE_SUBSYSTEM_POSIX_CUI),
+        ("IMAGE_SUBSYSTEM_NATIVE_WINDOWS", IMAGE_SUBSYSTEM_NATIVE_WINDOWS),
+        ("IMAGE_SUBSYSTEM_WINDOWS_CE_GUI", IMAGE_SUBSYSTEM_WINDOWS_CE_GUI),
+        ("IMAGE_SUBSYSTEM_EFI_APPLICATION", IMAGE_SUBSYSTEM_EFI_APPLICATION),
+        ("IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER", IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER),
+        ("IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER", IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER),
+        ("IMAGE_SUBSYSTEM_EFI_ROM", IMAGE_SUBSYSTEM_EFI_ROM),
+        ("IMAGE_SUBSYSTEM_XBOX", IMAGE_SUBSYSTEM_XBOX),
+        ("IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION", IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION),
+    ])
+    subsystem_named_type = define_named_type(bv, "pe_subsystem", subsystem_type)
+
     data_dir_type = Type.structure([
         (Type.int(4, False), "virtualAddress"),
         (Type.int(4, False), "size"),
     ])
-
     data_dir_named_type = define_named_type(bv, "EFI_IMAGE_DATA_DIR", data_dir_type)
 
     te_header_type = Type.structure([
         (Type.array(Type.int(1, True), 2), "signature"),
         (Type.int(2, False), "machine"),
         (Type.int(1, False), "numberOfSections"),
-        (Type.int(1, False), "subsystem"),
+        (subsystem_named_type, "subsystem"),
         (Type.int(2, False), "strippedSize"),
         (Type.int(4, False), "addressOfEntryPoint"),
         (Type.int(4, False), "baseOfCode"),
         (Type.int(8, False), "imageBase"),
         (Type.array(data_dir_named_type, 2), "dataDirectory"),
     ])
-
     te_header_named_type = define_named_type(bv, "EFI_TE_IMAGE_HEADER", te_header_type)
 
     return te_header_named_type
