@@ -7,6 +7,35 @@ def define_named_type(bv: BinaryView, name: str, ty: Type) -> NamedTypeReference
     return Type.named_type_from_type(type_name, ty)
 
 def define_te_header_type(bv: BinaryView) -> NamedTypeReferenceType:
+    machine_type = Type.enumeration(arch=bv.arch, width=2, sign=False, members=[
+        ("IMAGE_FILE_MACHINE_UNKNOWN", IMAGE_FILE_MACHINE_UNKNOWN),
+        ("IMAGE_FILE_MACHINE_AM33", IMAGE_FILE_MACHINE_AM33),
+        ("IMAGE_FILE_MACHINE_AMD64", IMAGE_FILE_MACHINE_AMD64),
+        ("IMAGE_FILE_MACHINE_ARM", IMAGE_FILE_MACHINE_ARM),
+        ("IMAGE_FILE_MACHINE_ARM64", IMAGE_FILE_MACHINE_ARM64),
+        ("IMAGE_FILE_MACHINE_ARMNT", IMAGE_FILE_MACHINE_ARMNT),
+        ("IMAGE_FILE_MACHINE_EBC", IMAGE_FILE_MACHINE_EBC),
+        ("IMAGE_FILE_MACHINE_I386", IMAGE_FILE_MACHINE_I386),
+        ("IMAGE_FILE_MACHINE_IA64", IMAGE_FILE_MACHINE_IA64),
+        ("IMAGE_FILE_MACHINE_M32R", IMAGE_FILE_MACHINE_M32R),
+        ("IMAGE_FILE_MACHINE_MIPS16", IMAGE_FILE_MACHINE_MIPS16),
+        ("IMAGE_FILE_MACHINE_MIPSFPU", IMAGE_FILE_MACHINE_MIPSFPU),
+        ("IMAGE_FILE_MACHINE_MIPSFPU16", IMAGE_FILE_MACHINE_MIPSFPU16),
+        ("IMAGE_FILE_MACHINE_POWERPC", IMAGE_FILE_MACHINE_POWERPC),
+        ("IMAGE_FILE_MACHINE_POWERPCFP", IMAGE_FILE_MACHINE_POWERPCFP),
+        ("IMAGE_FILE_MACHINE_R4000", IMAGE_FILE_MACHINE_R4000),
+        ("IMAGE_FILE_MACHINE_RISCV32", IMAGE_FILE_MACHINE_RISCV32),
+        ("IMAGE_FILE_MACHINE_RISCV64", IMAGE_FILE_MACHINE_RISCV64),
+        ("IMAGE_FILE_MACHINE_RISCV128", IMAGE_FILE_MACHINE_RISCV128),
+        ("IMAGE_FILE_MACHINE_SH3", IMAGE_FILE_MACHINE_SH3),
+        ("IMAGE_FILE_MACHINE_SH3DSP", IMAGE_FILE_MACHINE_SH3DSP),
+        ("IMAGE_FILE_MACHINE_SH4", IMAGE_FILE_MACHINE_SH4),
+        ("IMAGE_FILE_MACHINE_SH5", IMAGE_FILE_MACHINE_SH5),
+        ("IMAGE_FILE_MACHINE_THUMB", IMAGE_FILE_MACHINE_THUMB),
+        ("IMAGE_FILE_MACHINE_WCEMIPSV2", IMAGE_FILE_MACHINE_WCEMIPSV2),
+    ])
+    machine_named_type = define_named_type(bv, "coff_machine", machine_type)
+
     subsystem_type = Type.enumeration(arch=bv.arch, width=1, sign=False, members=[
         ("IMAGE_SUBSYSTEM_UNKNOWN", IMAGE_SUBSYSTEM_UNKNOWN),
         ("IMAGE_SUBSYSTEM_NATIVE", IMAGE_SUBSYSTEM_NATIVE),
@@ -33,7 +62,7 @@ def define_te_header_type(bv: BinaryView) -> NamedTypeReferenceType:
 
     te_header_type = Type.structure([
         (Type.array(Type.int(1, True), 2), "signature"),
-        (Type.int(2, False), "machine"),
+        (machine_named_type, "machine"),
         (Type.int(1, False), "numberOfSections"),
         (subsystem_named_type, "subsystem"),
         (Type.int(2, False), "strippedSize"),
