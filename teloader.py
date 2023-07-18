@@ -32,7 +32,7 @@ class TerseExecutableView(BinaryView):
 
         return True
 
-    def _set_platform(self, machine: int):
+    def _set_platform(self, machine: int, subsystem: int):
         """
         Set the platform/architecture for the view. This field is inherited from the PE format and so takes on the same values. We match on the subset of values that correspond to platforms that Binja directly supports.
 
@@ -46,7 +46,18 @@ class TerseExecutableView(BinaryView):
             0xaa64: Platform['efi-aarch64'],
         }
 
-        self.platform = platforms[machine]
+        windows_platforms = {
+            0x14c: Platform['efi-windows-x86'],
+            0x8664: Platform['efi-windows-x86_64'],
+            0xaa64: Platform['efi-windows-aarch64'],
+        }
+
+        if subsystem == 0x10 and machine in windows_platforms:
+            self.platform = windows_platforms[machine]
+        else:
+            assert subsystem in [0xa, 0xb, 0xc, 0xd]
+            self.platform = platforms[machine]
+
         self.arch = self.platform.arch
 
     def _create_sections_and_segments(self, image_base: int, header_offset: int, num_sections: int):
@@ -109,7 +120,6 @@ class TerseExecutableView(BinaryView):
         hdr = self.raw.read(0, 0x28)
 
         machine = struct.unpack('<H', hdr[0x02:0x04])[0]
-        self._set_platform(machine)
 
         num_sections = hdr[4]
         subsystem = hdr[5]
@@ -119,6 +129,8 @@ class TerseExecutableView(BinaryView):
         image_base = struct.unpack('<Q', hdr[0x10:0x18])[0]
 
         headers_offset = stripped_size - TERSE_IMAGE_HEADER_SIZE # Don't question it...
+
+        self._set_platform(machine, subsystem)
 
         self._create_sections_and_segments(image_base, headers_offset, num_sections)
         self._apply_header_types(image_base, headers_offset, num_sections)
