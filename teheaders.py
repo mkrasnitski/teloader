@@ -130,7 +130,7 @@ def define_section_header_type(bv: BinaryView) -> NamedTypeReferenceType:
         (Type.int(4, False), "pointerToRawData"),
         (Type.int(4, False), "pointerToRelocations"),
         (Type.int(4, False), "pointerToLineNumbers"),
-        (Type.int(2, False), "numberOfLineNumbers"),
+        (Type.int(2, False), "numberOfRelocations"),
         (Type.int(2, False), "numberOfLineNumbers"),
         (characteristics_named_type, "characteristics"),
     ])
